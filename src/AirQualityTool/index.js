@@ -16,6 +16,8 @@ const AirQualityTool = () => {
   const [city1, setCity1] = useState("");
   const [city2, setCity2] = useState("");
   const [city1Data, setCity1Data] = useState(null);
+  const [city2Data, setCity2Data] = useState(null);
+  const [finalResult, setFinalResult] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -32,18 +34,81 @@ const AirQualityTool = () => {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setFinalResult(null);
+    let firstValue, secondValue;
     try {
+      //this is for city one
       const response1 = await axios.get(
-        `https://api.openaq.org/v1/measurements?city=${city1}&city=${city2}`
+        `https://api.openaq.org/v1/measurements?city=${city1}`
       );
 
       if (response1?.data?.results && response1?.data?.results?.length > 0) {
-        setCity1Data(response1?.data?.results);
+        let heighest;
+        for (let item of response1?.data?.results) {
+          if (!heighest) {
+            heighest = item;
+          } else {
+            if (heighest?.value < item?.value) {
+              heighest = item;
+            }
+          }
+        }
+        let resultData = [];
+        if (heighest) {
+          resultData.push(heighest);
+        }
+        firstValue = heighest;
+        setCity1Data(resultData);
       } else {
         setCity1Data("No Data found");
       }
     } catch (error) {
       setError(`Failed to fetch data for ${city1}`);
+    }
+    ///this is for city 2
+    try {
+      const response2 = await axios.get(
+        `https://api.openaq.org/v1/measurements?city=${city2}`
+      );
+
+      if (response2?.data?.results && response2?.data?.results?.length > 0) {
+        let heighest;
+        for (let item of response2?.data?.results) {
+          if (!heighest) {
+            heighest = item;
+          } else {
+            if (heighest?.value < item?.value) {
+              heighest = item;
+            }
+          }
+        }
+        let resultData = [];
+        if (heighest) {
+          resultData.push(heighest);
+        }
+        secondValue = heighest;
+        setCity2Data(resultData);
+      } else {
+        setCity2Data("No Data found");
+      }
+    } catch (error) {
+      setError(`Failed to fetch data for ${city1}`);
+    }
+
+    if (firstValue?.value > secondValue?.value) {
+      setFinalResult([
+        {
+          finalCity: ` ${city2} has a better Air quality`,
+          difference: firstValue?.value - secondValue?.value,
+        },
+      ]);
+    } else {
+      setFinalResult([
+        {
+          finalCity: `${city1} has a better Air quality`,
+          difference: firstValue?.value - secondValue?.value,
+        },
+      ]);
     }
 
     setLoading(false);
@@ -90,9 +155,10 @@ const AirQualityTool = () => {
           <Container
             style={{
               marginTop: "2rem",
+              //   backgroundColor: "blue",
             }}>
             <Segment>
-              <Form onSubmit={handleSubmit}>
+              <Form onSubmit={handleSubmit} style={{ display: "flex" }}>
                 <Form.Field>
                   <label>City 1</label>
                   <input
@@ -102,6 +168,9 @@ const AirQualityTool = () => {
                     // required
                   />
                 </Form.Field>
+                <Button type="submit" className="btn-primary">
+                  {loading ? "Loading..." : " Compare Air Quality"}
+                </Button>
                 <Form.Field>
                   <label>City 2</label>
                   <input
@@ -111,10 +180,6 @@ const AirQualityTool = () => {
                     // required
                   />
                 </Form.Field>
-
-                <Button type="submit" className="btn-primary">
-                  {loading ? "Loading..." : " Compare"}
-                </Button>
               </Form>
             </Segment>
           </Container>
@@ -125,7 +190,7 @@ const AirQualityTool = () => {
             {error && <Message negative>{error}</Message>}
 
             <Grid
-              columns={2}
+              columns={3}
               stackable
               style={{ marginTop: "2rem", display: "flex", padding: "8px" }}>
               {(city1Data &&
@@ -133,9 +198,7 @@ const AirQualityTool = () => {
                   return (
                     <Grid.Column style={{ minWidth: "120px" }}>
                       <Segment>
-                        <Header as="h3">
-                          City: {item?.city || item?.location}
-                        </Header>
+                        <Header as="h3">City: {city1 || item?.location}</Header>
                         <span>{getAllKeysAndValues(item)}</span>
                       </Segment>
                     </Grid.Column>
@@ -147,15 +210,40 @@ const AirQualityTool = () => {
                   </Segment>
                 </Grid.Column>
               )}
-
-              {/* {city2Data && (
-                <Grid.Column>
+              {(finalResult &&
+                finalResult?.map?.((item) => {
+                  return (
+                    <Grid.Column style={{ minWidth: "120px" }}>
+                      <Segment>
+                        <Header as="h3">{item?.finalCity}</Header>
+                        <span>{getAllKeysAndValues(item)}</span>
+                      </Segment>
+                    </Grid.Column>
+                  );
+                })) || (
+                <Grid.Column style={{ minWidth: "120px", textAlign: "center" }}>
                   <Segment>
-                    <Header as="h3">City 2: {city2}</Header>
-                    <pre>{JSON.stringify(city2Data, null, 2)}</pre>
+                    <span>No data found</span>
                   </Segment>
                 </Grid.Column>
-              )} */}
+              )}
+              {(city2Data &&
+                city2Data?.map?.((item) => {
+                  return (
+                    <Grid.Column style={{ minWidth: "120px" }}>
+                      <Segment>
+                        <Header as="h3">City: {city2 || item?.location}</Header>
+                        <span>{getAllKeysAndValues(item)}</span>
+                      </Segment>
+                    </Grid.Column>
+                  );
+                })) || (
+                <Grid.Column style={{ minWidth: "120px", textAlign: "center" }}>
+                  <Segment>
+                    <span>No data found</span>
+                  </Segment>
+                </Grid.Column>
+              )}
             </Grid>
           </div>
         </React.Fragment>

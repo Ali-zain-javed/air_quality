@@ -15,12 +15,17 @@
   justify-content: center;
   margin: 60px 0 0;
   width: 600px;
+  /* background-color: blue; */
 }
 
 .btn-primary {
   background-color: #33a3a1 !important;
   color: #fff !important;
+  height: 40px;
   font-weight: 700 !important;
+  margin-right: 12px !important;
+  margin-left: 12px !important;
+  margin-top: 22px !important;
 }
 
 .type-display-1 {
